@@ -7,9 +7,32 @@ import {
   Button,
   Box,
   Alert,
+  styled,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { pushups } from '../services/api';
+
+const GradientCard = styled(Card)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.primary.dark}22 0%, ${theme.palette.secondary.dark}22 100%)`,
+  backdropFilter: 'blur(10px)',
+  '& .MuiCardContent-root': {
+    position: 'relative',
+    zIndex: 1,
+  },
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: 'rgba(26, 32, 44, 0.8)',
+    backdropFilter: 'blur(10px)',
+    '&:hover': {
+      backgroundColor: 'rgba(26, 32, 44, 0.9)',
+    },
+    '&.Mui-focused': {
+      backgroundColor: 'rgba(26, 32, 44, 1)',
+    },
+  },
+}));
 
 interface PushupFormProps {
   dailyGoal: number;
@@ -48,18 +71,26 @@ const PushupForm: React.FC<PushupFormProps> = ({ dailyGoal, onSuccess, isPublic 
   };
 
   return (
-    <Card elevation={3}>
+    <GradientCard>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Record Today's Pushups
-        </Typography>
-
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Daily Goal: {dailyGoal} pushups
-        </Typography>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Record Today's Pushups
+          </Typography>
+          <Typography variant="subtitle1" sx={{ opacity: 0.8 }}>
+            Daily Goal: {dailyGoal} pushups
+          </Typography>
+        </Box>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 2, 
+              backgroundColor: 'rgba(211, 47, 47, 0.1)',
+              borderRadius: 2,
+            }}
+          >
             {error}
           </Alert>
         )}
@@ -73,7 +104,7 @@ const PushupForm: React.FC<PushupFormProps> = ({ dailyGoal, onSuccess, isPublic 
             alignItems: 'flex-start',
           }}
         >
-          <TextField
+          <StyledTextField
             label="Number of Pushups"
             type="number"
             value={count}
@@ -81,19 +112,27 @@ const PushupForm: React.FC<PushupFormProps> = ({ dailyGoal, onSuccess, isPublic 
             required
             inputProps={{ min: 0 }}
             sx={{ flexGrow: 1 }}
+            variant="outlined"
           />
           <Button
             type="submit"
             variant="contained"
             startIcon={<AddIcon />}
             disabled={loading}
-            sx={{ height: 56 }}
+            sx={{
+              height: 56,
+              minWidth: 120,
+              background: 'linear-gradient(45deg, #B794F4, #F687B3)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #9F7AEA, #ED64A6)',
+              },
+            }}
           >
             {loading ? 'Recording...' : 'Record'}
           </Button>
         </Box>
       </CardContent>
-    </Card>
+    </GradientCard>
   );
 };
 

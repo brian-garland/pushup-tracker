@@ -69,24 +69,52 @@ export const pushups = {
   },
 };
 
-// Quotes service using the Type.fit API
+// Quotes service with better error handling and fallback quotes
+const FALLBACK_QUOTES = [
+  {
+    content: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    author: "Winston Churchill"
+  },
+  {
+    content: "The only way to do great work is to love what you do.",
+    author: "Steve Jobs"
+  },
+  {
+    content: "It does not matter how slowly you go as long as you do not stop.",
+    author: "Confucius"
+  },
+  {
+    content: "The difference between try and triumph is just a little umph!",
+    author: "Marvin Phillips"
+  },
+  {
+    content: "The only person you are destined to become is the person you decide to be.",
+    author: "Ralph Waldo Emerson"
+  }
+];
+
 export const quotes = {
   getRandomQuote: async (): Promise<Quote> => {
     try {
-      const { data } = await axios.get('https://type.fit/api/quotes');
-      const quotes = data as Array<{ text: string; author: string }>;
-      const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+      console.log('Fetching new quote...');
+      const response = await fetch('https://api.quotable.io/random?tags=inspirational,motivational');
+      
+      if (!response.ok) {
+        throw new Error(`Quote API responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Quote received:', data);
+      
       return {
-        content: randomQuote.text,
-        author: randomQuote.author?.split(',')[0] || 'Unknown' // Clean up author name
+        content: data.content,
+        author: data.author
       };
     } catch (error) {
       console.error('Failed to fetch quote:', error);
-      // Fallback to a default quote if API fails
-      return {
-        content: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-        author: "Winston Churchill"
-      };
+      // Return a random fallback quote
+      const randomIndex = Math.floor(Math.random() * FALLBACK_QUOTES.length);
+      return FALLBACK_QUOTES[randomIndex];
     }
   }
 };
