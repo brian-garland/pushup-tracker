@@ -1,12 +1,13 @@
 import axios from 'axios';
 import { AuthResponse, LoginCredentials, RegisterData, PushupEntry, Quote } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
   },
 });
 
@@ -48,8 +49,9 @@ export const auth = {
 };
 
 export const pushups = {
-  createEntry: async (count: number): Promise<PushupEntry> => {
-    const { data } = await api.post('/pushups', { count });
+  createEntry: async (count: number, date?: string): Promise<PushupEntry> => {
+    const payload = date ? { count, date } : { count };
+    const { data } = await api.post('/pushups', payload);
     return data;
   },
 

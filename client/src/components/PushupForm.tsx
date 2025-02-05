@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { pushups } from '../services/api';
+import { format, parseISO, startOfDay } from 'date-fns';
 
 const GradientCard = styled(Card)(({ theme }) => ({
   background: `linear-gradient(135deg, ${theme.palette.primary.dark}22 0%, ${theme.palette.secondary.dark}22 100%)`,
@@ -38,12 +39,25 @@ interface PushupFormProps {
   dailyGoal: number;
   onSuccess: (count: number) => void;
   isPublic?: boolean;
+  selectedDate?: string;
 }
 
-const PushupForm: React.FC<PushupFormProps> = ({ dailyGoal, onSuccess, isPublic = false }) => {
+const PushupForm: React.FC<PushupFormProps> = ({ 
+  dailyGoal, 
+  onSuccess, 
+  isPublic = false,
+  selectedDate 
+}) => {
   const [count, setCount] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
+
+  const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
+  const isToday = !selectedDate || selectedDate === today;
+  
+  const formattedDate = selectedDate ? 
+    format(startOfDay(parseISO(selectedDate)), 'MMMM d, yyyy') : 
+    'today';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +73,7 @@ const PushupForm: React.FC<PushupFormProps> = ({ dailyGoal, onSuccess, isPublic 
       if (isPublic) {
         onSuccess(numCount);
       } else {
-        await pushups.createEntry(numCount);
+        await pushups.createEntry(numCount, selectedDate);
         onSuccess(numCount);
       }
       setCount('');
@@ -75,10 +89,14 @@ const PushupForm: React.FC<PushupFormProps> = ({ dailyGoal, onSuccess, isPublic 
       <CardContent>
         <Box sx={{ mb: 3 }}>
           <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Record Today's Pushups
+            Record {isToday ? "Today's" : 'Past'} Pushups
           </Typography>
           <Typography variant="subtitle1" sx={{ opacity: 0.8 }}>
-            Daily Goal: {dailyGoal} pushups
+            {isToday ? (
+              `Daily Goal: ${dailyGoal} pushups`
+            ) : (
+              `Recording pushups for ${formattedDate}`
+            )}
           </Typography>
         </Box>
 
