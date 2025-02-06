@@ -1,11 +1,11 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, CircularProgress, styled, alpha } from '@mui/material';
+import { Card, CardContent, Typography, Box, CircularProgress, styled, alpha, Theme } from '@mui/material';
 import { FormatQuote as QuoteIcon } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { quotes } from '../services/api';
 import type { Quote } from '../types';
 
-const GradientCard = styled(Card)(({ theme }) => ({
+const GradientCard = styled(Card)(({ theme }: { theme: Theme }) => ({
   background: `linear-gradient(135deg, ${theme.palette.secondary.dark}22 0%, ${theme.palette.primary.dark}22 100%)`,
   backdropFilter: 'blur(10px)',
   '& .MuiCardContent-root': {
@@ -14,7 +14,7 @@ const GradientCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const QuoteIconWrapper = styled(Box)(({ theme }) => ({
+const QuoteIconWrapper = styled(Box)(({ theme }: { theme: Theme }) => ({
   background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
   borderRadius: '50%',
   padding: theme.spacing(1),
@@ -26,7 +26,7 @@ const QuoteIconWrapper = styled(Box)(({ theme }) => ({
 }));
 
 const QuoteCard: React.FC = () => {
-  const { data: quote, isLoading, error } = useQuery<Quote>(
+  const { data: quote, isLoading } = useQuery<Quote, Error>(
     'quote',
     quotes.getRandomQuote,
     {
@@ -34,8 +34,8 @@ const QuoteCard: React.FC = () => {
       refetchOnWindowFocus: false,
       staleTime: 0,
       retry: 1,
-      onError: (error) => {
-        console.error('Error fetching quote:', error);
+      onError: (error: Error) => {
+        console.error('Error fetching quote:', error.message);
       }
     }
   );

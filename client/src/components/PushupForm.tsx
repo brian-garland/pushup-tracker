@@ -8,12 +8,13 @@ import {
   Box,
   Alert,
   styled,
+  Theme
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { pushups } from '../services/api';
 import { format, parseISO, startOfDay } from 'date-fns';
 
-const GradientCard = styled(Card)(({ theme }) => ({
+const GradientCard = styled(Card)(({ theme }: { theme: Theme }) => ({
   background: `linear-gradient(135deg, ${theme.palette.primary.dark}22 0%, ${theme.palette.secondary.dark}22 100%)`,
   backdropFilter: 'blur(10px)',
   '& .MuiCardContent-root': {
@@ -22,7 +23,7 @@ const GradientCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {
     backgroundColor: 'rgba(26, 32, 44, 0.8)',
     backdropFilter: 'blur(10px)',
@@ -33,7 +34,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
       backgroundColor: 'rgba(26, 32, 44, 1)',
     },
   },
-}));
+});
 
 interface PushupFormProps {
   dailyGoal: number;

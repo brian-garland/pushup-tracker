@@ -75,8 +75,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     return foundEntry;
   };
 
-  // Get current timezone
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Get current timezone with proper typing
+  const timezone: string = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  console.log('Calendar timezone:', timezone);
 
   // Get last 28 days using startOfDay to normalize the time in local timezone
   const today = startOfDay(new Date());
