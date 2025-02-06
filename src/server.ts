@@ -60,6 +60,20 @@ process.on('SIGINT', async () => {
   }
 });
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Pushup Tracker API is running',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/users',
+      pushups: '/api/pushups'
+    },
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
+});
+
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/pushups', pushupRoutes);
