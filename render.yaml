@@ -14,7 +14,7 @@ services:
       - key: PORT
         value: 10000
 
-  - type: static
+  - type: static-site
     name: pushup-tracker-web
     buildCommand: npm run build:client
     staticPublishPath: ./client/dist
