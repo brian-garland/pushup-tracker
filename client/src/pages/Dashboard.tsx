@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Grid, Typography, Box, Card } from '@mui/material';
 import { useQuery, useQueryClient } from 'react-query';
-import { format } from 'date-fns';
+import { format, startOfDay, parseISO } from 'date-fns';
 import Navigation from '../components/Navigation';
 import StreakCard from '../components/StreakCard';
 import PushupForm from '../components/PushupForm';
@@ -16,28 +16,9 @@ const Dashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
-  // Fetch today's entry
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const { data: entries, refetch: refetchToday } = useQuery<PushupEntry[]>(
-    ['pushups', 'today'],
-    async () => {
-      console.log('Fetching today\'s entries...');
-      const data = await pushups.getEntries(today, today);
-      console.log('Today\'s entries:', data);
-      return data;
-    },
-    {
-      refetchOnWindowFocus: true,
-      refetchOnMount: true,
-      refetchInterval: 0,
-      staleTime: 0,
-      cacheTime: 0,
-    }
-  );
-
-  // Fetch recent entries for the chart (last 28 days)
-  const { data: recentEntries, refetch: refetchRecent } = useQuery<PushupEntry[]>(
-    ['pushups', 'recent'],
+  // Fetch all recent entries (including today) in a single query
+  const { data: entries, refetch: refetchEntries } = useQuery<PushupEntry[]>(
+    ['pushups', 'all'],
     async () => {
       const endDate = new Date();
       const startDate = new Date();
@@ -63,20 +44,10 @@ const Dashboard: React.FC = () => {
   const handlePushupSuccess = async () => {
     try {
       console.log('Handling pushup success...');
-      // First invalidate all pushup-related queries
+      // Invalidate and refetch all entries
       await queryClient.invalidateQueries(['pushups']);
-      console.log('Queries invalidated');
-      
-      // Then explicitly refetch both queries
-      console.log('Refetching data...');
-      const [todayResult, recentResult] = await Promise.all([
-        refetchToday(),
-        refetchRecent()
-      ]);
-      console.log('Refetch results:', {
-        today: todayResult.data,
-        recent: recentResult.data
-      });
+      const result = await refetchEntries();
+      console.log('Refetch result:', result.data);
     } catch (error) {
       console.error('Failed to refresh data:', error);
     }
@@ -86,11 +57,22 @@ const Dashboard: React.FC = () => {
     setSelectedDate(date);
   };
 
-  const todayEntry = entries?.[0];
+  const normalizeDate = (dateStr: string) => {
+    return format(startOfDay(parseISO(dateStr)), 'yyyy-MM-dd');
+  };
+
+  const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
+  const todayEntry = entries?.find(entry => normalizeDate(entry.date) === today);
+  
   const hasCompletedToday = todayEntry ? todayEntry.count >= (user?.dailyGoal || 0) : false;
-  const selectedDateEntry = recentEntries?.find(entry => 
-    format(new Date(entry.date), 'yyyy-MM-dd') === selectedDate
-  );
+  const selectedDateEntry = entries?.find(entry => normalizeDate(entry.date) === selectedDate);
+
+  // Sort entries by date in descending order (most recent first)
+  const sortedEntries = entries?.sort((a, b) => {
+    const dateA = parseISO(a.date);
+    const dateB = parseISO(b.date);
+    return dateB.getTime() - dateA.getTime();
+  });
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -134,9 +116,9 @@ const Dashboard: React.FC = () => {
 
           {/* Calendar View */}
           <Grid item xs={12}>
-            {recentEntries && (
+            {entries && (
               <CalendarView
-                entries={recentEntries}
+                entries={entries}
                 dailyGoal={user?.dailyGoal || 0}
                 onDayClick={handleDayClick}
                 selectedDate={selectedDate}
@@ -167,7 +149,7 @@ const Dashboard: React.FC = () => {
               Recent Activity
             </Typography>
             <Grid container spacing={2}>
-              {recentEntries?.map((entry: PushupEntry) => (
+              {sortedEntries?.map((entry: PushupEntry) => (
                 <Grid item xs={12} sm={6} md={4} key={entry._id}>
                   <Box
                     sx={{
@@ -180,10 +162,10 @@ const Dashboard: React.FC = () => {
                         bgcolor: 'background.default',
                       },
                     }}
-                    onClick={() => handleDayClick(format(new Date(entry.date), 'yyyy-MM-dd'))}
+                    onClick={() => handleDayClick(normalizeDate(entry.date))}
                   >
                     <Typography variant="subtitle2" color="text.secondary">
-                      {format(new Date(entry.date), 'MMM dd, yyyy')}
+                      {format(parseISO(entry.date), 'MMM dd, yyyy')}
                     </Typography>
                     <Typography variant="h6">
                       {entry.count} pushups

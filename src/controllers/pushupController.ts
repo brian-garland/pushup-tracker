@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { startOfDay, endOfDay, subDays } from 'date-fns';
+import { startOfDay, endOfDay, subDays, parseISO } from 'date-fns';
+import { toZonedTime, getTimezoneOffset } from 'date-fns-tz';
 import PushupEntry from '../models/PushupEntry';
 import User from '../models/User';
 import { format } from 'date-fns';
@@ -19,18 +20,47 @@ export const createEntry = async (req: Request, res: Response) => {
     }
     console.log('Found user:', { id: user._id, name: user.name, dailyGoal: user.dailyGoal });
 
-    // Create entry date based on the user's timezone
+    // Get user's timezone
     const userTimezone = req.get('Timezone') || 'UTC';
-    const entryDate = date ? startOfDay(new Date(date)) : startOfDay(new Date());
-    console.log('Entry date:', entryDate);
     console.log('User timezone:', userTimezone);
 
-    // Check if entry already exists for the specified date
+    // Create entry date based on the user's timezone
+    let entryDate;
+    if (date) {
+      // For past dates, parse the ISO string and convert to UTC while preserving the local date
+      const localDate = parseISO(date);
+      const zonedDate = toZonedTime(localDate, userTimezone);
+      entryDate = startOfDay(zonedDate);
+      console.log('Past date entry:', { 
+        providedDate: date,
+        localDate: format(localDate, 'yyyy-MM-dd'),
+        zonedDate: format(zonedDate, 'yyyy-MM-dd'),
+        entryDate: format(entryDate, 'yyyy-MM-dd')
+      });
+    } else {
+      // For today's entry, use current date in user's timezone
+      const nowInUserTz = toZonedTime(new Date(), userTimezone);
+      entryDate = startOfDay(nowInUserTz);
+      console.log('Today\'s entry:', {
+        userDate: format(nowInUserTz, 'yyyy-MM-dd'),
+        entryDate: format(entryDate, 'yyyy-MM-dd')
+      });
+    }
+
+    // Check if entry already exists for the specified date in user's timezone
+    const dayStart = startOfDay(entryDate);
+    const dayEnd = endOfDay(entryDate);
+    
+    console.log('Searching for existing entry between:', {
+      dayStart: format(dayStart, 'yyyy-MM-dd HH:mm:ss'),
+      dayEnd: format(dayEnd, 'yyyy-MM-dd HH:mm:ss')
+    });
+
     const existingEntry = await PushupEntry.findOne({
       userId,
       date: {
-        $gte: startOfDay(entryDate),
-        $lt: endOfDay(entryDate)
+        $gte: dayStart,
+        $lt: dayEnd
       }
     });
     console.log('Existing entry:', existingEntry);
@@ -65,11 +95,14 @@ export const createEntry = async (req: Request, res: Response) => {
       throw new Error('User not found after updating streak');
     }
 
+    // Format the entry date consistently
+    const formattedEntry = {
+      ...entry.toObject(),
+      date: format(startOfDay(new Date(entry.date)), 'yyyy-MM-dd')
+    };
+
     const response = {
-      entry: {
-        ...entry.toObject(),
-        date: new Date(entry.date)
-      },
+      entry: formattedEntry,
       currentStreak: updatedUser.currentStreak,
       longestStreak: updatedUser.longestStreak
     };
@@ -88,45 +121,69 @@ export const getEntries = async (req: Request, res: Response) => {
     const { startDate, endDate } = req.query;
     console.log('User ID:', userId);
 
+    // Get user's timezone
+    const userTimezone = req.get('Timezone') || 'UTC';
+    console.log('User timezone:', userTimezone);
+
     const query: any = { userId };
 
     if (startDate && endDate) {
-      // Convert string dates to Date objects and use startOfDay/endOfDay
-      const start = startOfDay(new Date(startDate as string));
-      const end = endOfDay(new Date(endDate as string));
-      
-      console.log('Date range:', { start, end });
+      // Convert string dates to Date objects and use startOfDay/endOfDay in user's timezone
+      const startLocalDate = parseISO(startDate as string);
+      const endLocalDate = parseISO(endDate as string);
 
-      // Use actual Date objects in the query, not strings
+      // Convert to UTC while preserving local dates
+      const startZoned = toZonedTime(startLocalDate, userTimezone);
+      const endZoned = toZonedTime(endLocalDate, userTimezone);
+      const startOffset = getTimezoneOffset(userTimezone, startZoned);
+      const endOffset = getTimezoneOffset(userTimezone, endZoned);
+
+      const start = new Date(startOfDay(startZoned).getTime() - startOffset);
+      const end = new Date(endOfDay(endZoned).getTime() - endOffset);
+      
+      console.log('Date range:', { 
+        startLocal: format(startLocalDate, 'yyyy-MM-dd'),
+        endLocal: format(endLocalDate, 'yyyy-MM-dd'),
+        startUTC: format(start, 'yyyy-MM-dd HH:mm:ss'),
+        endUTC: format(end, 'yyyy-MM-dd HH:mm:ss')
+      });
+
       query.date = {
         $gte: start,
         $lte: end
       };
-
-      // Log the actual query with dates
-      console.log('MongoDB query:', {
-        ...query,
-        date: {
-          $gte: query.date.$gte.toISOString(),
-          $lte: query.date.$lte.toISOString()
-        }
-      });
     }
 
-    const entries = await PushupEntry.find(query).sort({ date: -1 });
+    // Get all entries
+    const entries = await PushupEntry.find(query);
     
-    // Log entries with their dates for debugging
-    console.log('Found entries:', entries.map(entry => ({
+    // Format and normalize all dates to user's timezone
+    const formattedEntries = entries.map(entry => {
+      // Convert UTC date to user's timezone
+      const zonedDate = toZonedTime(new Date(entry.date), userTimezone);
+      const normalizedDate = startOfDay(zonedDate);
+      return {
+        ...entry.toObject(),
+        date: format(normalizedDate, 'yyyy-MM-dd')
+      };
+    });
+    
+    // Sort entries by date in descending order (most recent first)
+    const sortedEntries = formattedEntries.sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+    
+    console.log('Found entries:', sortedEntries.map(entry => ({
       id: entry._id,
       date: entry.date,
       count: entry.count
     })));
     
-    if (entries.length === 0) {
+    if (sortedEntries.length === 0) {
       console.log('No entries found for the query');
     }
     
-    res.json(entries);
+    res.json(sortedEntries);
   } catch (error) {
     console.error('Error in getEntries:', error);
     res.status(500).json({ error: 'Server error' });
@@ -188,11 +245,6 @@ async function updateUserStreak(userId: string) {
   const user = await User.findById(userId);
   if (!user) return;
 
-  const today = new Date();
-  let currentStreak = 0;
-  let maxStreak = 0;
-  let consecutiveDays = 0;
-
   // First, get all entries sorted by date
   const entries = await PushupEntry.find({ userId })
     .sort({ date: -1 });
@@ -239,7 +291,10 @@ async function updateUserStreak(userId: string) {
   );
 
   // Calculate current streak (must be consecutive days up to today)
-  let currentDate = startOfDay(today);
+  let currentStreak = 0;
+  const today = startOfDay(new Date());
+  let currentDate = today;
+  
   console.log('Starting current streak calculation from:', format(currentDate, 'yyyy-MM-dd'));
   
   while (true) {
@@ -250,16 +305,15 @@ async function updateUserStreak(userId: string) {
       date: dateKey,
       hasEntry: !!dayEntry,
       goalMet: dayEntry?.goalMet,
-      isToday: currentDate.getTime() === startOfDay(today).getTime()
+      isToday: currentDate.getTime() === today.getTime()
     });
 
     if (dayEntry && dayEntry.goalMet) {
       currentStreak++;
-      console.log('Streak day found, current streak:', currentStreak);
       currentDate = subDays(currentDate, 1);
     } else {
       // If we're checking today and there's no entry, that's okay
-      if (currentDate.getTime() === startOfDay(today).getTime() && !dayEntry) {
+      if (currentDate.getTime() === today.getTime() && !dayEntry) {
         console.log('No entry for today, continuing to check previous days');
         currentDate = subDays(currentDate, 1);
         continue;
@@ -269,58 +323,65 @@ async function updateUserStreak(userId: string) {
     }
   }
 
-  // Calculate longest streak using a sliding window approach
-  console.log('Starting longest streak calculation');
-  let tempStreak = 0;
-  let prevDate: Date | null = null;
+  // Calculate all streaks (including historical ones)
+  console.log('Starting all streaks calculation');
+  let maxStreak = 0;
+  let currentHistoricalStreak = 0;
+  let lastDate: Date | null = null;
 
-  // Sort entries by date ascending for longest streak calculation
+  // Sort entries by date ascending
   const ascendingEntries = [...dailyEntries].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  ascendingEntries.forEach((entry) => {
+  for (let i = 0; i < ascendingEntries.length; i++) {
+    const entry = ascendingEntries[i];
+    
     if (!entry.goalMet) {
-      maxStreak = Math.max(maxStreak, tempStreak);
-      tempStreak = 0;
-      prevDate = null;
+      // Reset streak on non-goal days
+      maxStreak = Math.max(maxStreak, currentHistoricalStreak);
+      currentHistoricalStreak = 0;
+      lastDate = null;
       console.log('Non-goal day found, resetting streak:', {
         date: format(entry.date, 'yyyy-MM-dd'),
         maxStreak
       });
-      return;
+      continue;
     }
 
-    if (!prevDate) {
-      tempStreak = 1;
-      prevDate = entry.date;
+    if (!lastDate) {
+      // Start new streak
+      currentHistoricalStreak = 1;
+      lastDate = entry.date;
       console.log('Starting new streak:', {
         date: format(entry.date, 'yyyy-MM-dd'),
-        tempStreak
+        currentHistoricalStreak
       });
     } else {
-      const dayDiff = Math.round((entry.date.getTime() - prevDate.getTime()) / (24 * 60 * 60 * 1000));
+      const dayDiff = Math.round((entry.date.getTime() - lastDate.getTime()) / (24 * 60 * 60 * 1000));
       
       if (dayDiff === 1) {
-        tempStreak++;
+        // Consecutive day
+        currentHistoricalStreak++;
         console.log('Consecutive day found:', {
           date: format(entry.date, 'yyyy-MM-dd'),
-          tempStreak,
+          currentHistoricalStreak,
           dayDiff
         });
       } else {
-        maxStreak = Math.max(maxStreak, tempStreak);
-        tempStreak = 1;
+        // Gap in streak
+        maxStreak = Math.max(maxStreak, currentHistoricalStreak);
+        currentHistoricalStreak = 1;
         console.log('Gap in streak found:', {
           date: format(entry.date, 'yyyy-MM-dd'),
           dayDiff,
           maxStreak
         });
       }
-      prevDate = entry.date;
     }
-  });
+    lastDate = entry.date;
+  }
 
   // Handle the final streak
-  maxStreak = Math.max(maxStreak, tempStreak);
+  maxStreak = Math.max(maxStreak, currentHistoricalStreak);
 
   // Update the user's streaks
   user.currentStreak = currentStreak;

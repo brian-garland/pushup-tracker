@@ -65,44 +65,26 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 }) => {
   const getEntryForDate = (date: Date) => {
     const formattedSearchDate = format(startOfDay(date), 'yyyy-MM-dd');
-    console.log('Searching for entry on date:', formattedSearchDate);
     
     const foundEntry = entries.find(entry => {
       const entryDate = parseISO(entry.date);
       const formattedEntryDate = format(startOfDay(entryDate), 'yyyy-MM-dd');
-      
-      console.log('Comparing dates:', {
-        searchDate: formattedSearchDate,
-        entryDate: formattedEntryDate,
-        rawEntryDate: entry.date
-      });
-      
       return formattedSearchDate === formattedEntryDate;
     });
     
-    console.log('Found entry:', foundEntry);
     return foundEntry;
   };
 
-  // Get last 28 days using startOfDay to normalize the time
+  // Get current timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Get last 28 days using startOfDay to normalize the time in local timezone
   const today = startOfDay(new Date());
-  console.log('Calendar View - Today:', format(today, 'yyyy-MM-dd'));
   
   const daysToShow = eachDayOfInterval({
     start: subDays(today, 27),
     end: today,
   }).map(date => startOfDay(date));
-  
-  console.log('Calendar View - Days to show:', daysToShow.map(d => ({
-    formatted: format(d, 'yyyy-MM-dd'),
-    raw: d
-  })));
-  console.log('Calendar View - Available entries:', entries.map(entry => ({
-    id: entry._id,
-    date: format(new Date(entry.date), 'yyyy-MM-dd'),
-    rawDate: entry.date,
-    count: entry.count
-  })));
 
   return (
     <GradientCard>

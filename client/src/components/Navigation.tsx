@@ -52,11 +52,7 @@ const getButtonStyles = (theme: Theme) => ({
   },
 });
 
-interface NavigationProps {
-  isPublic?: boolean;
-}
-
-const Navigation: React.FC<NavigationProps> = ({ isPublic }) => {
+const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const theme = useTheme();
@@ -74,7 +70,7 @@ const Navigation: React.FC<NavigationProps> = ({ isPublic }) => {
           edge="start"
           color="inherit"
           component={RouterLink}
-          to="/"
+          to={user ? '/dashboard' : '/'}
           sx={{ mr: 2 }}
         >
           <LogoIcon />
@@ -95,7 +91,7 @@ const Navigation: React.FC<NavigationProps> = ({ isPublic }) => {
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {isPublic ? (
+          {!user ? (
             <>
               <Button
                 color="inherit"
@@ -124,7 +120,7 @@ const Navigation: React.FC<NavigationProps> = ({ isPublic }) => {
                   color: alpha(theme.palette.common.white, 0.7),
                 }}
               >
-                Welcome, {user?.name}
+                Welcome, {user.name}
               </Typography>
               
               <Button

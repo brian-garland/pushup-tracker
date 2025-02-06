@@ -52,12 +52,25 @@ const PushupForm: React.FC<PushupFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
+  // Get current timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  console.log('Form timezone:', timezone);
+
   const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
+  console.log('Form today (local):', today);
+  
   const isToday = !selectedDate || selectedDate === today;
   
   const formattedDate = selectedDate ? 
-    format(startOfDay(parseISO(selectedDate)), 'MMMM d, yyyy') : 
+    format(parseISO(selectedDate), 'MMMM d, yyyy') : 
     'today';
+
+  console.log('Form selected date:', {
+    selectedDate,
+    formattedDate,
+    isToday,
+    timezone
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +86,10 @@ const PushupForm: React.FC<PushupFormProps> = ({
       if (isPublic) {
         onSuccess(numCount);
       } else {
-        await pushups.createEntry(numCount, selectedDate);
+        // Always send a normalized date string
+        const dateToSend = selectedDate ? format(startOfDay(parseISO(selectedDate)), 'yyyy-MM-dd') : undefined;
+        console.log('Sending entry with date:', dateToSend);
+        await pushups.createEntry(numCount, dateToSend);
         onSuccess(numCount);
       }
       setCount('');

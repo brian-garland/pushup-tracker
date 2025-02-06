@@ -72,12 +72,31 @@ const StreakCard: React.FC<StreakCardProps> = ({ currentStreak, longestStreak })
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="subtitle1" sx={{ opacity: 0.8, mb: 1 }}>
               Current Streak
+              {currentStreak > 0 && currentStreak === longestStreak && (
+                <Typography
+                  component="span"
+                  sx={{
+                    display: 'inline-block',
+                    ml: 1,
+                    px: 1,
+                    py: 0.5,
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    borderRadius: 1,
+                    fontSize: '0.8em',
+                    color: 'secondary.main'
+                  }}
+                >
+                  New Record! 🎉
+                </Typography>
+              )}
             </Typography>
             <Box sx={{ 
               p: 1.5, 
               bgcolor: 'rgba(255,255,255,0.05)', 
               borderRadius: 2,
               backdropFilter: 'blur(10px)',
+              border: currentStreak === longestStreak && longestStreak > 0 ? 
+                '1px solid rgba(246, 135, 179, 0.3)' : 'none',
             }}>
               <Typography variant="subtitle2" sx={{ opacity: 0.7, mb: 0.5 }}>
                 Longest Streak

@@ -51,7 +51,7 @@ const PublicDashboard: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Navigation isPublic />
+      <Navigation />
       
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Grid container spacing={3}>
@@ -92,7 +92,6 @@ const PublicDashboard: React.FC = () => {
             <PushupForm
               dailyGoal={dailyGoal}
               onSuccess={handlePushupSuccess}
-              isPublic
             />
           </Grid>
 
