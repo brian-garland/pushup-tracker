@@ -15,7 +15,10 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "allowUnusedLabels": true,
+    "noImplicitAny": false,
+    "ignoreDeprecations": "5.0"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts"]

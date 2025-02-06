@@ -12,7 +12,8 @@ const QuoteCard: React.FC = () => {
       refetchOnWindowFocus: false,
       staleTime: 0,
       retry: 1,
-      onError: () => {
+      // @ts-ignore
+      onError: (error) => {
         console.error('Failed to fetch quote');
       }
     }

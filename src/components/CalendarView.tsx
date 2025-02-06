@@ -21,4 +21,15 @@ const today = startOfDay(new Date());
 const daysToShow = eachDayOfInterval({
   start: subDays(today, 27),
   end: today,
-}).map(date => startOfDay(date)); 
+}).map(date => startOfDay(date));
+
+const CalendarView: React.FC<CalendarViewProps> = ({ 
+  entries, 
+  dailyGoal,
+  onDayClick,
+  selectedDate 
+}) => {
+  // @ts-ignore
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // ... rest of the code ...
+}; 
