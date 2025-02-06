@@ -13,7 +13,7 @@ const QuoteCard: React.FC = () => {
       staleTime: 0,
       retry: 1,
       onError: () => {
-        console.error('Error fetching quote');
+        console.error('Failed to fetch quote');
       }
     }
   );

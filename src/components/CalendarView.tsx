@@ -1,3 +1,8 @@
+import React from 'react';
+import { Card, CardContent, Typography, Box, Grid, styled, alpha } from '@mui/material';
+import { format, eachDayOfInterval, subDays, isToday, startOfDay, parseISO } from 'date-fns';
+import type { PushupEntry } from '../types';
+
 const getEntryForDate = (date: Date) => {
   const formattedSearchDate = format(startOfDay(date), 'yyyy-MM-dd');
   
