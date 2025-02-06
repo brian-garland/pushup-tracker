@@ -12,8 +12,8 @@ const QuoteCard: React.FC = () => {
       refetchOnWindowFocus: false,
       staleTime: 0,
       retry: 1,
-      onError: (err) => {
-        console.error('Error fetching quote:', err);
+      onError: () => {
+        console.error('Error fetching quote');
       }
     }
   );

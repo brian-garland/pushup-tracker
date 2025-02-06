@@ -2,8 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { Card, TextField } from '@mui/material';
 
-const GradientCard = styled(Card)(({ theme }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.primary.dark}22 0%, ${theme.palette.secondary.dark}22 100%)`,
+const GradientCard = styled(Card)(() => ({
+  background: `linear-gradient(135deg, #1a202c22 0%, #2d374822 100%)`,
   backdropFilter: 'blur(10px)',
   '& .MuiCardContent-root': {
     position: 'relative',
