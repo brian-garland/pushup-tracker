@@ -10,8 +10,7 @@ interface PushupFormProps {
 }
 
 const GradientCard = styled(Card)`
-  // @ts-ignore
-  background: linear-gradient(135deg, ${props => props.theme.palette.primary.dark}22 0%, ${props => props.theme.palette.secondary.dark}22 100%);
+  background: linear-gradient(135deg, rgba(183, 148, 244, 0.1) 0%, rgba(246, 135, 179, 0.1) 100%);
   backdrop-filter: blur(10px);
   & .MuiCardContent-root {
     position: relative;

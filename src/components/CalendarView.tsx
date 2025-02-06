@@ -29,7 +29,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   onDayClick,
   selectedDate 
 }) => {
-  // @ts-ignore
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  // ... rest of the code ...
+  // Remove timezone variable since it's not being used
+  
+  const getEntryForDate = (date: Date) => {
+    // ... rest of the code ...
+  };
+  // ... rest of the component code ...
 }; 
