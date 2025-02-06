@@ -14,9 +14,10 @@ services:
       - key: PORT
         value: 10000
 
-  - type: static-site
+  - type: static
     name: pushup-tracker-web
-    buildCommand: npm run build:client
+    env: static
+    buildCommand: cd client && npm install && npm run build
     staticPublishPath: ./client/dist
     envVars:
       - key: VITE_API_URL
